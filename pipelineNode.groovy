@@ -26,7 +26,7 @@ pipeline {
                     echo "${IMAGE_VERSION}"
                 }
                 
-                sh """  docker build -f Dockerfile -t public.ecr.aws/f0o1f7t2/appsnao:${IMAGE_VERSION} .
+                sh """  docker build -f Dockerfile -t public.ecr.aws/f0o1f7t2/appsnao:${IMAGE_VERSION} -t public.ecr.aws/f0o1f7t2/appsnao:latest .
                         docker images
                         docker system prune -a
                     """
@@ -44,7 +44,7 @@ pipeline {
                         #!/bin/bash
                         aws configure set aws_access_key_id $aws_access_key_id
                         aws configure set aws_secret_access_key $aws_secret_access_key
-                        aws configure set default.region us-west-2 --output json --profile dev
+                        aws configure set default.region us-east-1 --output json --profile dev
                         aws configure list
                         aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/f0o1f7t2
                     """
@@ -56,6 +56,16 @@ pipeline {
             steps {
                 sh """
          	      docker push public.ecr.aws/f0o1f7t2/appsnao:${IMAGE_VERSION}
+                  docker push public.ecr.aws/f0o1f7t2/appsnao:latest 
+                """
+            }
+        }
+
+
+        stage('Deploy Image') {
+            steps {
+                sh """
+         	      aws ecs update-service --cluster DevApp --service task-service --force-new-deployment
                 """
             }
         }
